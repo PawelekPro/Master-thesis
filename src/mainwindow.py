@@ -15,11 +15,13 @@ from PyQt5.QtCore import Qt, QCoreApplication, QSize
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QFileSystemModel, QWidget, QLabel, QVBoxLayout, \
     QProgressBar, QSizePolicy, QStatusBar, QDockWidget, QSplitter, QGroupBox, QGridLayout, QSpacerItem, \
-    QPushButton, QTreeView, QFrame
+    QPushButton, QTreeView, QFrame, QTabBar
 
 import src
-from src.dialogs import plotControl
+from src.interface_setup import plotControl, fftControl
+from src.matplotlibWidget import fft_graphic_widget, matplotlibWidget
 from src.postprocessing.csvReader import csvReader
+from src.postprocessing.fft_analysis import FFTAnalysis
 from src.ui_mainwindow import Ui_MainWindow
 from src.utils import create_rounded_pixmap, signature, printText
 from src.utils.utilities import draw_ruler
@@ -32,6 +34,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     _csv_data_path: str = ''
     _running: bool = False
     progressBar: QProgressBar = None
+    _label_left: list = []
+    _label_right: list = []
 
     def __init__(self):
         super().__init__()
@@ -69,7 +73,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.currentChanged.connect(self.state_changed)
         self.plot_options_gbox.plot_button.clicked.connect(self.on_plot_clicked)
         self.browse_csv.clicked.connect(lambda: self.open_file_dialog(
-                self.load_csv, 'Load images', src.CSV_FILTER))
+            self.load_csv, 'Load images', src.CSV_FILTER))
+
+        self.fft_options_gbox.fft_plot_button.clicked.connect(
+            self.plot_fft_clicked)
+        self.fft_options_gbox.fft_clear_button.clicked.connect(
+            self.on_clear_plot_clicked)
 
     @property
     def project_directory(self):
@@ -596,21 +605,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.csv_list.setObjectName("csv_list")
         self.m_grid_layout_1.addWidget(self.csv_list, 0, 0, 1, 2)
 
-        self.csv_file_model = QFileSystemModel() # noqa
+        self.csv_file_model = QFileSystemModel()  # noqa
         self.csv_file_model.setRootPath("")
         self.csv_list.setModel(self.csv_file_model)
         self.csv_list.setRootIndex(self.csv_file_model.index(""))
         self.csv_list.setFont(font)
 
-        self.plot_options_gbox = plotControl(self.dock_wid_cont) # noqa
+        self.plot_options_gbox = plotControl(self.dock_wid_cont)  # noqa
         self.plot_options_gbox.setTitle('Plot controls')
         self.plot_options_gbox.setStyleSheet(src.QSS_Q_GROUP)
         self.data_gbox.setStyleSheet(src.QSS_Q_GROUP)
 
-        splitter = QSplitter(Qt.Vertical)  # Create a splitter
-        splitter.addWidget(self.data_gbox)
-        splitter.addWidget(self.plot_options_gbox)
-        self.m_layout.addWidget(splitter)
+        self.fft_options_gbox = fftControl(self.dock_wid_cont)  # noqa
+        self.fft_options_gbox.setTitle('FFT analysis')
+        self.fft_options_gbox.setStyleSheet(src.QSS_Q_GROUP)
+        self.post_tabWidget.setStyleSheet(src.QSS_Q_CHILD_TAB_WIDGET)
+
+        splitter_top = QSplitter(Qt.Vertical)  # Create a splitter
+        splitter_top.addWidget(self.data_gbox)
+        splitter_top.addWidget(self.plot_options_gbox)
+        splitter_top.addWidget(self.fft_options_gbox)
+        self.m_layout.addWidget(splitter_top)
 
         self.dock_wid_cont.setLayout(self.m_layout)
         self.post_dock_widget.setWidget(self.dock_wid_cont)
@@ -631,13 +646,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                            linewidth=self.plot_options_gbox.line_width.value())  # noqa
 
         line_3, = ax1.plot(data.time, [data.left_static_angle for x in data.left_angle],
-                          color='navy', linestyle=(0, (5, 5)),
-                          linewidth=self.plot_options_gbox.line_width.value(),
-                          label=f'Static angle={data.left_static_angle}')  # noqa
+                           color='navy', linestyle=(0, (5, 5)),
+                           linewidth=self.plot_options_gbox.line_width.value(),
+                           label=f'Static angle={data.left_static_angle}')  # noqa
         line_4, = ax2.plot(data.time, [data.right_static_angle for x in data.right_angle],
-                          color='navy', linestyle=(0, (5, 5)),
-                          linewidth=self.plot_options_gbox.line_width.value(),
-                          label=f'Static angle={data.right_static_angle}')  # noqa
+                           color='navy', linestyle=(0, (5, 5)),
+                           linewidth=self.plot_options_gbox.line_width.value(),
+                           label=f'Static angle={data.right_static_angle}')  # noqa
 
         line_5, = ax3.plot(
             data.time[0:len(data.dContact_length)], data.dContact_length,
@@ -659,7 +674,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                       self.plot_options_gbox.dl_max.value()])
         ax1.set_title(self.plot_options_gbox.title_line.text())
 
-    def on_plot_clicked(self):
+    def on_plot_clicked(self) -> None:
+        """ Plotting raw data in 'Raw data' tab. """
         first_index = self.csv_file_model.index(0, 0, self.csv_list.rootIndex())
         first_file_path = self.csv_file_model.filePath(first_index)
 
@@ -681,6 +697,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.print_message(f'CSV file path: {data_path}')
 
         try:
+            self.switch_to_tab("Raw data")
             self.plot(data_path)
             self.pltWidget.canvas.draw()
             self.print_message('INFO: Plot has been generated.')
@@ -691,3 +708,113 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 f'{e}')
             self.print_message(str(e))
             return
+
+    def plot_fft_clicked(self) -> None:
+        first_index = self.csv_file_model.index(0, 0, self.csv_list.rootIndex())
+        first_file_path = self.csv_file_model.filePath(first_index)
+
+        data_path = first_file_path
+        selected_item = None
+        if self.csv_list.selectedIndexes():
+            for index in self.csv_list.selectedIndexes():
+                selected_item = self.csv_file_model.filePath(index)
+            data_path = selected_item
+
+        _, extension = os.path.splitext(data_path)
+        if extension.lower() != '.csv':
+            QMessageBox.warning(
+                self, src.PROJ_NAME,
+                'First you have to select directory containing CSV data.\n' +
+                'Operation aborted.')
+            return
+
+        self.print_message(f'CSV file path: {data_path}')
+
+        try:
+            self.switch_to_tab("FFT Analysis")
+            self.plot_fft(data_path)
+            self.fftWidget.canvas.draw()
+            self.print_message('INFO: FFT plot has been generated.')
+
+        except Exception as e:
+            self.print_message(str(e))
+            QMessageBox.warning(
+                self, src.PROJ_NAME,
+                'Error while generating plot.\n' +
+                f'{e}')
+            return
+
+    def plot_fft(self, path: str) -> None:
+        # Fixme: Bug with plotting already existing data
+        data = FFTAnalysis(path, self.plot_options_gbox.avg_scope.value())
+        ax1, ax2 = self.fftWidget.axes
+
+        if data.label in self._label_left:
+            return
+
+        if self.fft_options_gbox.common_graph.isChecked():
+            if self._label_left and self._label_left[0] == 'Left Angle':
+                self._label_left.pop(0)
+                self._label_right.pop(0)
+
+            line_1, = ax1.plot(data.frequencies[1:], data.left_fft_values[1:],
+                                label=f'Left angle:{data.label}',
+                                linewidth=self.fft_options_gbox.line_width.value())
+            line_2, = ax2.plot(data.frequencies[1:], data.right_fft_values[1:],
+                                label=f'Right angle: {data.label}',
+                                linewidth=self.fft_options_gbox.line_width.value())  # noqa
+            self._label_left.append(line_1)
+            self._label_right.append(line_2)
+
+        else:
+            # Clear data stored in axes
+            for _ax in self.fftWidget.axes:
+                _ax.clear()
+
+            if self._label_left:
+                self._label_left.pop()
+                self._label_right.pop()
+
+            line_1, = ax1.plot(data.frequencies[1:], data.left_fft_values[1:], color='navy',
+                               label='Left angle', linewidth=self.fft_options_gbox.line_width.value())
+            line_2, = ax2.plot(data.frequencies[1:], data.right_fft_values[1:], color='navy',
+                               label='Right angle', linewidth=self.fft_options_gbox.line_width.value())  # noqa
+            self._label_left.append(line_1)
+            self._label_right.append(line_2)
+
+        ax1.legend(handles=self._label_left, fontsize=8)
+        ax2.legend(handles=self._label_right, fontsize=8)
+
+        ax1.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
+        ax2.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
+
+        ax1.set(xlabel="Frequency [Hz]", ylabel="Amplitude")
+        ax2.set(xlabel="Frequency [Hz]", ylabel="Amplitude")
+
+        ax1.set_xlim([
+            self.fft_options_gbox.freq_min.value(),
+            self.fft_options_gbox.freq_max.value()])
+        ax2.set_xlim([
+            self.fft_options_gbox.freq_min.value(),
+            self.fft_options_gbox.freq_max.value()])
+
+        ax1.set_title(self.fft_options_gbox.title_line.text())
+
+    def switch_to_tab(self, tab_name: str) -> None:
+        """ Find the index of the tab by its name. """
+        if tab_name == "FFT Analysis":
+            self.post_tabWidget.setCurrentIndex(1)
+        else:
+            self.post_tabWidget.setCurrentIndex(0)
+        self.post_tabWidget.update()
+
+    def on_clear_plot_clicked(self):
+        self._label_left.clear()
+        self._label_right.clear()
+        try:
+            # Clear data stored in axes
+            for _ax in self.fftWidget.axes:
+                _ax.clear()
+            self.print_message('INFO: FFT plot cleared.')
+        except Exception as e:
+            self.print_message(str(e))

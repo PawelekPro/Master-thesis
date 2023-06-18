@@ -14,7 +14,7 @@ class Ui_plotControl(object):
     def setupUi(self, plotControl):
         plotControl.setObjectName("plotControl")
         plotControl.resize(400, 200)
-        plotControl.setMaximumSize(QtCore.QSize(16777214, 200))
+        plotControl.setMaximumSize(QtCore.QSize(16777214, 16777215))
         font = QtGui.QFont()
         font.setFamily("Open Sans")
         plotControl.setFont(font)
@@ -23,7 +23,7 @@ class Ui_plotControl(object):
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.gridLayout_3 = QtWidgets.QGridLayout()
         self.gridLayout_3.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
-        self.gridLayout_3.setContentsMargins(10, 5, 10, -1)
+        self.gridLayout_3.setContentsMargins(10, 5, 10, 5)
         self.gridLayout_3.setVerticalSpacing(10)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.label = QtWidgets.QLabel(plotControl)
