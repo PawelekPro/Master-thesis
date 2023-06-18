@@ -32,6 +32,26 @@ QSS_Q_TAB_WIDGET = \
                 border-bottom-left-radius: 5px;
                 background-color: lightgray;
                 height: 25px;
+                width: 150px;
+            }
+            QTabBar::tab:selected {
+                background-color: white;
+            }
+            """
+
+QSS_Q_CHILD_TAB_WIDGET = \
+            """
+            QTabWidget::pane {
+                border-radius: 5px;
+                border: 1px solid lightgray;
+                margin-top: 2px;
+            }
+            QTabBar::tab {
+                border-top-left-radius: 3px;
+                border-top-right-radius: 3px;
+                border-bottom-left-radius: 3px;
+                background-color: lightgray;
+                height: 15px;
                 width: 100px;
             }
             QTabBar::tab:selected {

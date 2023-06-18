@@ -118,8 +118,57 @@
          <number>0</number>
         </property>
         <item row="0" column="0">
-         <widget class="matplotlibWidget" name="pltWidget" native="true">
-          <layout class="QGridLayout" name="gridLayout"/>
+         <widget class="QTabWidget" name="post_tabWidget">
+          <property name="styleSheet">
+           <string notr="true">;</string>
+          </property>
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <widget class="QWidget" name="plt">
+           <attribute name="title">
+            <string>Raw data</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="matplotlibWidget" name="pltWidget" native="true"/>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="fft">
+           <attribute name="title">
+            <string>FFT Analysis</string>
+           </attribute>
+           <layout class="QGridLayout" name="gridLayout_11">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item row="0" column="0">
+             <widget class="fft_graphic_widget" name="fftWidget" native="true"/>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -142,7 +191,7 @@
   <widget class="QDockWidget" name="option_control">
    <property name="minimumSize">
     <size>
-     <width>440</width>
+     <width>478</width>
      <height>836</height>
     </size>
    </property>
@@ -320,7 +369,7 @@
              <widget class="QLabel" name="label_9">
               <property name="minimumSize">
                <size>
-                <width>335</width>
+                <width>393</width>
                 <height>0</height>
                </size>
               </property>
@@ -973,7 +1022,7 @@
   <widget class="QDockWidget" name="outputTerminal">
    <property name="minimumSize">
     <size>
-     <width>440</width>
+     <width>492</width>
      <height>144</height>
     </size>
    </property>
@@ -1005,7 +1054,39 @@
      <property name="bottomMargin">
       <number>0</number>
      </property>
-     <item row="0" column="0">
+     <property name="horizontalSpacing">
+      <number>0</number>
+     </property>
+     <property name="verticalSpacing">
+      <number>2</number>
+     </property>
+     <item row="1" column="0">
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>60</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="1" column="1">
+      <widget class="QPushButton" name="clear">
+       <property name="maximumSize">
+        <size>
+         <width>50</width>
+         <height>20</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Clear</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="3">
       <widget class="QTextEdit" name="output_panel">
        <property name="minimumSize">
         <size>
@@ -1037,7 +1118,36 @@
        <property name="readOnly">
         <bool>true</bool>
        </property>
+       <property name="html">
+        <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Open Sans'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+       <property name="acceptRichText">
+        <bool>false</bool>
+       </property>
+       <property name="textInteractionFlags">
+        <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse|Qt::TextBrowserInteraction|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
+       </property>
       </widget>
+     </item>
+     <item row="1" column="2">
+      <spacer name="horizontalSpacer_5">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeType">
+        <enum>QSizePolicy::Fixed</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>5</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </widget>
@@ -1050,7 +1160,30 @@
    <header>src.matplotlibWidget</header>
    <container>1</container>
   </customwidget>
+  <customwidget>
+   <class>fft_graphic_widget</class>
+   <extends>QWidget</extends>
+   <header>src.matplotlibWidget</header>
+   <container>1</container>
+  </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>clear</sender>
+   <signal>clicked()</signal>
+   <receiver>output_panel</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>461</x>
+     <y>996</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>27</x>
+     <y>945</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>
