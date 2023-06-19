@@ -465,10 +465,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 max_x = x
 
         height = init_height
-        right_corn_coord = (max_x - 80, height - 50)
+        right_corn_coord = (max_x - 60, height - 40)
 
         # Todo: Think about how it should work using PointPolygonTest
-        cv2.rectangle(img, (min_x + 80, init_height), right_corn_coord, 255, -1)  # type: ignore
+        cv2.rectangle(img, (min_x + 60, init_height), right_corn_coord, 255, -1)  # type: ignore
 
     def interpolate_polynomials(self, img, contour_object, ret: bool = False):
         pixels = np.argwhere(img == 255)
@@ -507,10 +507,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # calculate derivatives and use them to get the angle
         dp_left = np.polyder(p_left, 1)
-        angle_left = np.pi / 2 + np.arctan(dp_left(max(y_left) - 1))
+        angle_left = np.pi / 2 + np.arctan(dp_left(max(y_left)))
 
         dp_right = np.polyder(p_right, 1)
-        angle_right = np.pi - (np.pi / 2 + np.arctan(dp_right(max(y_right) - 1)))
+        angle_right = np.pi - (np.pi / 2 + np.arctan(dp_right(max(y_right))))
 
         # draw tangent lines
         line_len = 150
