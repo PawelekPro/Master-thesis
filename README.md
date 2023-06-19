@@ -1,2 +1,2 @@
-# Master-thesis
+# Master-thesis - image detector application
 In progress ...
