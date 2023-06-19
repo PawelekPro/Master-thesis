@@ -13,7 +13,9 @@ if __name__ == '__main__':
     pixmap = QPixmap(f'{RES_DIR}/app_icon.ico')
     icon = QIcon(pixmap)
     app.setWindowIcon(icon)
-
+    app.setApplicationDisplayName('ImageDetector')
+    main_window.setWindowIcon(icon)
+    main_window.setWindowTitle('ImageDetector')
     # Set maximized screen mode
     main_window.showMaximized()
     sys.exit(app.exec_())
