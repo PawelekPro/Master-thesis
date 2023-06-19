@@ -58,7 +58,7 @@ $ pyinstaller imageDetector_app.spec
 Executable file will be built in `${APP_ROOT}\build\imageDector` folder.
 
 ## Usage
-Data sample (images from measurement) is available `${APP_ROOT}\data_sample`.
+Data sample (images from measurement) is available here: `${APP_ROOT}\data_sample`.
 
 ![Alt Text](resources/application_layout_01.png)
 
