@@ -56,3 +56,16 @@ $ python -m pip install pyinstaller
 $ pyinstaller imageDetector_app.spec
 ```
 Executable file will be built in `${APP_ROOT}\build\imageDector` folder.
+
+## Usage
+Data sample (images from measurement) is available `${APP_ROOT}\data_sample`.
+
+![Alt Text](resources/application_layout_01.png)
+
+Postprocessing module (graph of angle change over time):
+
+![Alt Text](resources/application_layout_02.png)
+
+Postprocessing module (FFT Analysis): 
+
+![Alt Text](resources/application_layout_03.png)
