@@ -100,55 +100,56 @@ class minMaxAvgManager:
 
     def plot(self):
         plt.subplot(1, 2, 1)
-        plt.errorbar(self.contactLen, self.avgLeft,
+        plt.errorbar([x/np.mean(self.contactLen) for x in self.contactLen], self.avgLeft,
                      [[i - j for i, j in zip(self.avgLeft, self.leftMin)],
                       [j - i for i, j in zip(self.avgLeft, self.leftMax)]],
                      fmt='o', linewidth=0.5, capsize=6)
         plt.title("Left angle")
-        plt.xlabel("Contact length [px]", size=11)
+        plt.xlabel("Normalised contact length (d_i/mean(D) where D = [d_1, d_2, ...]", size=10)
         plt.ylabel('[min(\u03F4{}), avg(\u03F4{}), max(\u03F4{})]'.format(get_sub('L'), get_sub('L'), get_sub('L')),
                    size=11)
         plt.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
-        for a, b in zip(self.contactLen, self.avgLeft):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.avgLeft):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
-        for a, b in zip(self.contactLen, self.leftMin):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.leftMin):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
-        for a, b in zip(self.contactLen, self.leftMax):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.leftMax):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
 
-        plt.ylim([48, 90])
+        # plt.ylim([48, 90])
         for i in range(len(self.contactLen)):
-            plt.text(self.contactLen[i], self.leftMax[i] + 1, f'{round(self.leftStat[i], 2)}',
+            plt.text([x/np.mean(self.contactLen) for x in self.contactLen][i], self.leftMax[i] + 1,
+                     f'{round(self.leftStat[i], 2)}',
                      bbox=dict(facecolor='red', alpha=0.5, pad=1), size=6)
 
         plt.subplot(1, 2, 2)
-        plt.errorbar(self.contactLen, self.avgRight,
+        plt.errorbar([x/np.mean(self.contactLen) for x in self.contactLen], self.avgRight,
                      [[i - j for i, j in zip(self.avgRight, self.rightMin)],
                       [j - i for i, j in zip(self.avgRight, self.rightMax)]],
                      fmt='o', linewidth=0.5, capsize=6)
         plt.title("Right angle")
-        plt.xlabel("Contact length [px]", size=11)
+        plt.xlabel("Normalised contact length (d_i/mean(D) where D = [d_1, d_2, ...]", size=10)
         plt.ylabel('[min(\u03F4{}), avg(\u03F4{}), max(\u03F4{})]'.format(get_sub('P'), get_sub('P'), get_sub('P')),
                    size=11)
         plt.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
-        for a, b in zip(self.contactLen, self.avgRight):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.avgRight):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
-        for a, b in zip(self.contactLen, self.rightMin):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.rightMin):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
-        for a, b in zip(self.contactLen, self.rightMax):
+        for a, b in zip([x/np.mean(self.contactLen) for x in self.contactLen], self.rightMax):
             plt.text(a, b, str('  ' + "{:.2f}".format(b)), size=7)
 
-        plt.ylim([48, 90])
+        # plt.ylim([48, 90])
         for i in range(len(self.contactLen)):
-            plt.text(self.contactLen[i], self.rightMax[i] + 1, f'{round(self.rightStat[i], 2)}',
+            plt.text([x/np.mean(self.contactLen) for x in self.contactLen][i], self.rightMax[i] + 1, f'{round(self.rightStat[i], 2)}',
                      bbox=dict(facecolor='red', alpha=0.5, pad=1), size=6)
 
         plt.suptitle(
-            '[min(\u03F4), avg(\u03F4), max(\u03F4)](contact length)' + ' - zestawienie dla 20 pomiarów\n'
+            '[min(\u03F4), avg(\u03F4), max(\u03F4)](contact length)' + ' - zestawienie 20 pomiarów dla pleksy\n'
             'Czerwone boxy zawieraja wartość kąta statycznego', size=14)
         plt.show()
 
 
 if __name__ == "__main__":
-    testClass = minMaxAvgManager('C:/MEIL_WORKSPACE')
+    testClass = minMaxAvgManager('C:/MEIL_WORKSPACE/')
     testClass.plot()
