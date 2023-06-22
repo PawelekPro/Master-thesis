@@ -12,7 +12,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from PyQt5.QtCore import Qt, QCoreApplication, QSize
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QDoubleValidator
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QFileSystemModel, QWidget, QLabel, QVBoxLayout, \
     QProgressBar, QSizePolicy, QStatusBar, QDockWidget, QSplitter, QGroupBox, QGridLayout, QSpacerItem, \
     QPushButton, QTreeView, QFrame, QTabBar
@@ -627,6 +627,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         splitter_top.addWidget(self.fft_options_gbox)
         self.m_layout.addWidget(splitter_top)
 
+        float_validator = QDoubleValidator(0.0, 100.0, 4)
+        self.fft_options_gbox.motion_freq.setValidator(float_validator)
+
         self.dock_wid_cont.setLayout(self.m_layout)
         self.post_dock_widget.setWidget(self.dock_wid_cont)
         self.m_layout.setContentsMargins(0, 0, 0, 0)
@@ -746,7 +749,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def plot_fft(self, path: str) -> None:
         # Fixme: Bug with plotting already existing data
-        data = FFTAnalysis(path, self.plot_options_gbox.avg_scope.value())
+        data = FFTAnalysis(
+            path, self.plot_options_gbox.avg_scope.value(),
+            float(self.fft_options_gbox.motion_freq.text().replace(',', '.')))
+
         ax1, ax2 = self.fftWidget.axes
 
         if data.label in self._label_left:
@@ -788,8 +794,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         ax1.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
         ax2.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
 
-        ax1.set(xlabel="Frequency [Hz]", ylabel="Amplitude")
-        ax2.set(xlabel="Frequency [Hz]", ylabel="Amplitude")
+        ax1.set(xlabel="Normalised frequency", ylabel="Amplitude")
+        ax2.set(xlabel="Normalised frequency", ylabel="Amplitude")
+
+        ax1.minorticks_on()  # Enable minor x-axis ticks
+        ax2.minorticks_on()  # Enable minor x-axis ticks
 
         ax1.set_xlim([
             self.fft_options_gbox.freq_min.value(),

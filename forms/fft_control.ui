@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>202</height>
+    <height>211</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -46,22 +46,6 @@
      <property name="bottomMargin">
       <number>5</number>
      </property>
-     <item row="4" column="0">
-      <widget class="QLabel" name="label">
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>10</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Plot title:</string>
-       </property>
-       <property name="indent">
-        <number>0</number>
-       </property>
-      </widget>
-     </item>
      <item row="5" column="0">
       <widget class="QLineEdit" name="title_line">
        <property name="minimumSize">
@@ -75,6 +59,22 @@
          <width>16777215</width>
          <height>20</height>
         </size>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>10</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>Plot title:</string>
+       </property>
+       <property name="indent">
+        <number>0</number>
        </property>
       </widget>
      </item>
@@ -113,13 +113,13 @@
            </size>
           </property>
           <property name="minimum">
-           <number>-150</number>
+           <number>-15</number>
           </property>
           <property name="maximum">
            <number>100</number>
           </property>
           <property name="value">
-           <number>-150</number>
+           <number>-15</number>
           </property>
          </widget>
         </item>
@@ -135,14 +135,21 @@
            <number>-100</number>
           </property>
           <property name="maximum">
-           <number>150</number>
+           <number>15</number>
           </property>
           <property name="value">
-           <number>150</number>
+           <number>15</number>
           </property>
          </widget>
         </item>
        </layout>
+      </widget>
+     </item>
+     <item row="0" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Common graph</string>
+       </property>
       </widget>
      </item>
      <item row="1" column="0">
@@ -171,20 +178,6 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="0">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>Common graph</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="2">
-      <widget class="QCheckBox" name="common_graph">
-       <property name="text">
-        <string/>
-       </property>
-      </widget>
-     </item>
      <item row="5" column="2">
       <widget class="QPushButton" name="fft_plot_button">
        <property name="text">
@@ -202,6 +195,33 @@
        </property>
        <property name="shortcut">
         <string>P</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="2">
+      <widget class="QCheckBox" name="common_graph">
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Motion frequency [Hz]</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="2">
+      <widget class="QLineEdit" name="motion_freq">
+       <property name="maximumSize">
+        <size>
+         <width>75</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>11,72</string>
        </property>
       </widget>
      </item>
