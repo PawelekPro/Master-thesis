@@ -317,6 +317,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         time = [frame_ / self.fps.value() for frame_ in frame]
         slip_data = [x - self._slip_data[0] for x in self._slip_data]
+        self.export_to_csv(time, slip_data)
         plt.plot(time, slip_data)
         plt.show()
 
@@ -341,13 +342,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return img
 
     def export_to_csv(
-            self, list_1: list, list_2: list, list_3: list, list_4: list, list_5: list) -> None:
-        rows = zip(list_1, list_2, list_3, list_4, list_5)
-        name = self.project_name
-        with open(f'{self.project_directory}/{name}.csv', 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Time', 'Left Angle', 'Right Angle', 'Contact Length', 'Cross Section Area'])
-            writer.writerows(rows)
+            self, list_1: list = None,
+            list_2: list = None,
+            list_3: list = None,
+            list_4: list = None,
+            list_5: list = None) -> None:
+
+        args = [list_1, list_2, list_3, list_4, list_5]
+        if None not in args:
+            rows = zip(list_1, list_2, list_3, list_4, list_5)
+            name = self.project_name
+            with open(f'{self.project_directory}/{name}.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Time', 'Left Angle', 'Right Angle', 'Contact Length', 'Cross Section Area'])
+                writer.writerows(rows)
+        else:
+            rows = zip(list_1, list_2)
+            name = self.project_name
+            with open(f'{self.project_directory}/{name}_slip.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(['Time', 'l0'])
+                writer.writerows(rows)
 
     def preview(self):
         first_index = self.file_model.index(0, 0, self.file_list.rootIndex())
@@ -697,7 +712,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def fit_curve(self, data: csvReader):
         """ Fits asymptotic curve. """
-        idx = np.where(np.asarray(data.dContact_length) > 3)
+        idx = np.where(np.asarray(data.dContact_length) > 1)
 
         time, val = np.asarray(data.time)[idx], np.asarray(data.dContact_length)[idx]
         popt, _ = curve_fit(self.asymptotic_func, time, val)  # noqa

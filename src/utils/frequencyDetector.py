@@ -29,7 +29,7 @@ class LinMotCsvDataExtractor:
 
 
 if __name__ == "__main__":
-    path = 'C:/Users/pawel/Downloads/krzem_A100F100.csv'
+    path = 'D:/praca_magisterska/pomiary_24072023/osci/A100_F71.csv'
 
     data = None
     if os.path.isfile(path):
