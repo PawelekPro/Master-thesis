@@ -29,7 +29,7 @@ class LinMotCsvDataExtractor:
 
 
 if __name__ == "__main__":
-    path = 'C:/MEIL_WORKSPACE/oscilloscope.csv'
+    path = 'C:/Users/pawel/Downloads/krzem_A100F100.csv'
 
     data = None
     if os.path.isfile(path):
@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     if data is not None:
         plt.plot(data.time, data.demandPos, label='Demand position [mm]')
-        plt.plot(data.time, data.actualPos, label='Actual position [mm]')
+        plt.plot(data.time, data.actualVel, label='Actual position [mm]')
         plt.legend()
         plt.show()
 

@@ -6,7 +6,7 @@ import shutil
 from copy import deepcopy
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Tuple, Any, List
+from typing import Callable, Tuple, Any, List, Optional, Union
 
 import cv2
 import numpy as np
@@ -16,6 +16,9 @@ from PyQt5.QtGui import QFont, QDoubleValidator
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QFileSystemModel, QWidget, QLabel, QVBoxLayout, \
     QProgressBar, QSizePolicy, QStatusBar, QDockWidget, QSplitter, QGroupBox, QGridLayout, QSpacerItem, \
     QPushButton, QTreeView, QFrame, QTabBar
+from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit, minimize_scalar, root_scalar
+from scipy.signal import argrelextrema
 
 import src
 from src.interface_setup import plotControl, fftControl
@@ -36,6 +39,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     progressBar: QProgressBar = None
     _label_left: list = []
     _label_right: list = []
+    _slip_data: list = []
 
     def __init__(self):
         super().__init__()
@@ -203,6 +207,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def run_conversion(self) -> None:
         """ Runs the conversion process for all images available in chosen directory. """
 
+        self._slip_data.clear()  # Reset content of slip data list
         if os.path.exists(self.data_path) is False:
             QMessageBox.warning(
                 self, src.PROJ_NAME,
@@ -244,10 +249,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.progressBar.hide()
 
-    def _run_conversion(self) -> Tuple[Any, List[Any], List[Any], List[Any]]:
+    def _run_conversion(self) -> Tuple[List[Any], List[Any], List[Any], List[Any]]:
         if os.path.exists(src.TEMP_DIR):
             shutil.rmtree(src.TEMP_DIR)
         os.mkdir(src.TEMP_DIR)
+
+        converted_dir = os.path.join(src.TEMP_DIR, 'converted')
+        if not os.path.exists(converted_dir):
+            os.mkdir(converted_dir)
+        else:
+            shutil.rmtree(converted_dir)
+            os.mkdir(converted_dir)
 
         frame = []
         paths = []
@@ -267,9 +279,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.progressBar.setValue(int(i / len(frame) * 100))
 
             ret_img = self.binary_threshold(paths[i])
+            pure_image = self.partial_filter(paths[i])
             ret_img_copy = deepcopy(ret_img)
             cont_img, cont_obj = self.contour_detecting(ret_img_copy)
-            result_img, ret_1, ret_2, ret_3, ret_4 = self.interpolate_polynomials(cont_img, cont_obj, True)
+            # remove pure_image from args list to avoid saving converted images
+            result_img, ret_1, ret_2, ret_3, ret_4 = \
+                self.interpolate_polynomials(cont_img, cont_obj, True, pure_image)
             leftAngle.append(ret_1)
             rightAngle.append(ret_2)
             contactLength.append(ret_3)
@@ -293,10 +308,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 path_to_save = f'{src.TEMP_DIR}/' + paths[i][-23:]
                 cv2.imwrite(str(path_to_save), result_img)  # type: ignore
 
+                path_to_save = os.path.join(src.TEMP_DIR, 'converted', paths[i][-23:])
+                cv2.imwrite(str(path_to_save), pure_image)
+
+
             # Process pending events to keep the GUI responsive
             QCoreApplication.processEvents()
 
         time = [frame_ / self.fps.value() for frame_ in frame]
+        slip_data = [x - self._slip_data[0] for x in self._slip_data]
+        plt.plot(time, slip_data)
+        plt.show()
+
         if self._running:
             self.progressBar.setValue(100)
             self.print_message(f'\n\nSuccessfully converted {len(paths)} files.')
@@ -311,6 +334,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return time, leftAngle, rightAngle, contactLength, crossSectionArea
 
         return [], [], [], []
+
+    @staticmethod
+    def partial_filter(path):
+        img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)  # type: ignore
+        return img
 
     def export_to_csv(
             self, list_1: list, list_2: list, list_3: list, list_4: list, list_5: list) -> None:
@@ -448,6 +476,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         output_object[self.ground_height.value(), :] = 125
         # Draw ruler representing interpolation range
         draw_ruler(output_object, self.interpolation_range.value(), 5, (15, self.ground_height.value()))
+
         return output_object, cont_filtered
 
     @staticmethod
@@ -470,7 +499,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Todo: Think about how it should work using PointPolygonTest
         cv2.rectangle(img, (min_x + 60, init_height), right_corn_coord, 255, -1)  # type: ignore
 
-    def interpolate_polynomials(self, img, contour_object, ret: bool = False):
+    def interpolate_polynomials(
+            self, img, contour_object, ret: bool = False, pure_img: Optional[np.ndarray] = None):
         pixels = np.argwhere(img == 255)
         x = (pixels[:, 1])
         y = (pixels[:, 0])
@@ -537,6 +567,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                              x_right[np.argmax(y_right)] - x_left[np.argmax(y_left)],
                              crossSectionArea], [10, 60], 0.4)
 
+        left_apex = x_left[np.argmax(y_left)]
+        right_apex = x_right[np.argmax(y_right)]
+        self.extract_slip_data((left_apex, self.ground_height.value()), (right_apex, self.ground_height.value() - 50))
+
+        if pure_img is not None:
+            pure_img[self.ground_height.value(), :] = 125
+            p1 = np.array([x_left[np.argmax(y_left)], max(y_left)])
+            p2 = p1 + np.array([line_len * np.cos(angle_left), -line_len * np.sin(angle_left)])
+            cv2.line(pure_img, (p1[0], p1[1]), (round(p2[0]), round(p2[1])), 255,
+                     thickness=line_thickness)  # type: ignore
+
+            p1 = np.array([x_right[np.argmax(y_right)], max(y_right)])
+            p2 = p1 + np.array([-line_len * np.cos(angle_right), -line_len * np.sin(angle_right)])
+            cv2.line(pure_img, (p1[0], p1[1]), (round(p2[0]), round(p2[1])), 255,
+                     thickness=line_thickness)  # type: ignore
+
+            signature(pure_img, [10, 20], 0.4, self.fps.value())
+            printText(pure_img, [math.degrees(angle_left), math.degrees(angle_right),
+                                 x_right[np.argmax(y_right)] - x_left[np.argmax(y_left)],
+                                 crossSectionArea], [10, 60], 0.4)
+
         if ret:
             return img_copy, \
                    math.degrees(angle_left), \
@@ -544,6 +595,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                    crossSectionArea
         else:
             return img_copy
+
+    def extract_slip_data(
+            self, origin: Tuple[float, float],
+            end: Tuple[float, float]) -> None:
+        self._slip_data.append(origin[0])
 
     def print_message(self, msg: str) -> None:
         current_time = datetime.now().strftime("%H:%M:%S")
@@ -635,6 +691,46 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.m_layout.setContentsMargins(0, 0, 0, 0)
         self.dock_wid_cont.setContentsMargins(2, 2, 2, 2)
 
+    @staticmethod
+    def asymptotic_func(x, a: float, b: float):
+        return a + b / x
+
+    def fit_curve(self, data: csvReader):
+        """ Fits asymptotic curve. """
+        idx = np.where(np.asarray(data.dContact_length) > 3)
+
+        time, val = np.asarray(data.time)[idx], np.asarray(data.dContact_length)[idx]
+        popt, _ = curve_fit(self.asymptotic_func, time, val)  # noqa
+
+        a_opt, b_opt = popt
+        x_data = np.linspace(
+            min(time),
+            max(data.time[0:len(data.dContact_length)]),
+            100)
+        y_data = self.asymptotic_func(x_data, a_opt, b_opt)
+
+        top_range = 200
+        thresh = 0.9
+
+        def line(x):
+            return thresh * a_opt
+
+        def diff_function(x, a, b):
+            return self.asymptotic_func(x, a, b) - line(x)
+
+        result = root_scalar(diff_function, args=(a_opt, b_opt), bracket=[0, top_range])
+
+        x_intersection = 0
+        y_intersection = 0
+        if result.converged:
+            x_intersection = result.root
+            y_intersection = line(x_intersection)
+            self.print_message(f"Intersection point found: ({x_intersection},{y_intersection})")
+        else:
+            self.print_message('WARNING: Intersection not found!')
+
+        return a_opt, b_opt, x_data, y_data, x_intersection, y_intersection
+
     def plot(self, path: str) -> None:
         data = csvReader(path, self.plot_options_gbox.avg_scope.value())
         ax1, ax2, ax3 = self.pltWidget.axes
@@ -657,13 +753,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                            linewidth=self.plot_options_gbox.line_width.value(),
                            label=f'Static angle={data.right_static_angle}')  # noqa
 
+        a_opt, b_opt, x_asymptote, y_asymptote, expected_time, expected_val = self.fit_curve(data)
+
         line_5, = ax3.plot(
-            data.time[0:len(data.dContact_length)], data.dContact_length,
-            label='Length of droplet contact zone', color='deepskyblue', linewidth=0.5)  # noqa
+            data.time[0:len(data.dContact_length)], data.dContact_length, marker='.',
+            label='Raw data', color='#5500ffff', markersize=0.1)  # noqa
+
+        domain = np.asarray(data.time[0:len(data.dContact_length)])
+        _data = np.asarray(data.dContact_length)
+
+        # idx = argrelextrema(_data, np.greater)
+        # local_maxima = _data[idx]
+        # ax3.plot(domain[idx], local_maxima, 'o')
+
+        line_6, = ax3.plot(
+            x_asymptote, y_asymptote,
+            label=f'asymptotic fun: y = a + b/x, '
+                  f'(a={round(a_opt, 2)}, '
+                  f'b={round(b_opt, 2)})',
+            color='navy', linewidth=1)  # noqa
+        line_7, = ax3.plot([min(data.time), max(data.time)], [a_opt, a_opt],
+                           label=f'Lim value of target function (x->inf): {round(a_opt, 2)}',
+                           linestyle='dashed', linewidth=1, color='black')
+
+        text = f"Time to reach 90% of lim value: {round(expected_time, 3)} [s]"
+        ax3.text(0, 5, text, fontsize=7,
+                 bbox=dict(facecolor='yellow', edgecolor='black', boxstyle='round,pad=0.5'))
 
         ax1.legend(handles=[line_1, line_3])
         ax2.legend(handles=[line_2, line_4])
-        ax3.legend(handles=[line_5])
+        ax3.legend(handles=[line_5, line_6, line_7], fontsize=7, loc='upper left')
 
         ax1.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
         ax2.grid(visible=True, which='both', linestyle='--', linewidth='0.25')
@@ -764,11 +883,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self._label_right.pop(0)
 
             line_1, = ax1.plot(data.frequencies[1:], data.left_fft_values[1:],
-                                label=f'Left angle:{data.label}',
-                                linewidth=self.fft_options_gbox.line_width.value())
+                               label=f'Left angle:{data.label}',
+                               linewidth=self.fft_options_gbox.line_width.value())
             line_2, = ax2.plot(data.frequencies[1:], data.right_fft_values[1:],
-                                label=f'Right angle: {data.label}',
-                                linewidth=self.fft_options_gbox.line_width.value())  # noqa
+                               label=f'Right angle: {data.label}',
+                               linewidth=self.fft_options_gbox.line_width.value())  # noqa
             self._label_left.append(line_1)
             self._label_right.append(line_2)
 

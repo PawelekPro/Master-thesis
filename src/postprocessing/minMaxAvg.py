@@ -98,6 +98,10 @@ class minMaxAvgManager:
             sum(avgLeftMin) / len(avgLeftMin), sum(avgRightMin) / len(avgRightMin), \
             np.mean(leftAngle), np.mean(rightAngle), staticLength, leftStat, rightStat
 
+    def fit_asymptote(self) -> None:
+        data = self.read_csv(self.dir_path)
+
+
     def plot(self):
         plt.subplot(1, 2, 1)
         plt.errorbar([x/np.mean(self.contactLen) for x in self.contactLen], self.avgLeft,
@@ -145,11 +149,37 @@ class minMaxAvgManager:
                      bbox=dict(facecolor='red', alpha=0.5, pad=1), size=6)
 
         plt.suptitle(
-            '[min(\u03F4), avg(\u03F4), max(\u03F4)](contact length)' + ' - zestawienie 20 pomiarów dla pleksy\n'
+            '[min(\u03F4), avg(\u03F4), max(\u03F4)](contact length)' + ' - zestawienie 20 pomiarów dla plytki krzemowej\n'
             'Czerwone boxy zawieraja wartość kąta statycznego', size=14)
         plt.show()
 
 
 if __name__ == "__main__":
-    testClass = minMaxAvgManager('C:/MEIL_WORKSPACE/')
+    testClass = minMaxAvgManager('C:/MEIL_WORKSPACE/krzem_steady')
+
+
+    # Uwaga na to
+    # testClass.leftMax[3] += 4
+    # testClass.rightMax[3] += 3
+    # testClass.leftMin[3] += 1.5
+    # testClass.rightMin[3] += 3
+    #
+    # testClass.leftMax[2] += 1
+    # testClass.rightMax[2] += 2
+    # testClass.leftMin[2] += 3
+    # testClass.rightMin[2] += 3
+    #
+    # testClass.avgLeft[3] += 1.2
+    # testClass.avgRight[3] += 1.5
+    #
+    # testClass.avgLeft[2] += 1.5
+    # testClass.avgRight[2] += 1.5
+    #
+    # testClass.leftMax[1] += 1
+    # testClass.rightMax[1] += 1
+    # testClass.leftMin[1] += 1
+    # testClass.rightMin[1] += 1
+    # testClass.avgLeft[1] += 1.2
+    # testClass.avgRight[1] += 1
+
     testClass.plot()
